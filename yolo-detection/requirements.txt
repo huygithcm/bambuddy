@@ -1,0 +1,19 @@
+# Sidecar phát hiện lỗi in bằng YOLO cho Bambuddy
+
+# Web framework + server
+fastapi>=0.109.0,<0.136.0
+uvicorn[standard]>=0.27.0
+
+# Cấu hình qua biến môi trường
+pydantic>=2.0.0
+pydantic-settings>=2.14.2
+
+# HTTP client tải ảnh snapshot
+httpx>=0.26.0
+
+# Xử lý ảnh
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+
+# Model YOLO (kéo theo torch/torchvision)
+ultralytics>=8.3.0

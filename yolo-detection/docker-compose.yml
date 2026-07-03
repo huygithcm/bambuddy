@@ -1,0 +1,42 @@
+# Sidecar phát hiện lỗi in bằng YOLO cho Bambuddy.
+#
+# Bọc một model YOLO custom thành HTTP service tương thích ML API kiểu Obico.
+# Trong Bambuddy: Settings -> Notifications -> AI Print-Failure Detection,
+# đặt ML URL = http://<host>:3333 và bấm Test Connection.
+#
+# Cách dùng:
+#   cd yolo-detection/
+#   # đặt trọng số model vào ./models/best.pt
+#   docker compose up -d --build
+
+services:
+  yolo-detection:
+    build: .
+    container_name: bambuddy-yolo
+    restart: unless-stopped
+    ports:
+      - "${YOLO_PORT:-3333}:3333"
+    volumes:
+      # Mount thư mục chứa trọng số model (không copy vào image)
+      - ./models:/models:ro
+    environment:
+      YOLO_MODEL_PATH: /models/best.pt
+      YOLO_CONFIDENCE_THRESHOLD: "${YOLO_CONFIDENCE_THRESHOLD:-0.25}"
+      YOLO_IOU_THRESHOLD: "${YOLO_IOU_THRESHOLD:-0.45}"
+      YOLO_IMAGE_SIZE: "${YOLO_IMAGE_SIZE:-640}"
+      YOLO_DEVICE: "${YOLO_DEVICE:-cpu}"
+      YOLO_DETECTION_LABEL: "${YOLO_DETECTION_LABEL:-failure}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3333/hc/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    # Bỏ comment khối dưới nếu chạy trên GPU NVIDIA (đặt YOLO_DEVICE=cuda)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

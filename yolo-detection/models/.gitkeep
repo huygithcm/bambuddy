@@ -1,0 +1,2 @@
+# Đặt trọng số model YOLO của bạn vào đây, ví dụ: best.pt (hoặc best.onnx).
+# Các file model bị .gitignore bỏ qua — chỉ .gitkeep này được commit để giữ thư mục.

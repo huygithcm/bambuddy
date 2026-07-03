@@ -148,6 +148,50 @@ services:
       # - USE_SYSTEM_TRUST_STORE=true
     restart: unless-stopped
 
+  # AI print-failure detection sidecar (YOLO).
+  #
+  # Wraps a custom YOLO model as an Obico-compatible ML API so Bambuddy's
+  # built-in "AI Print-Failure Detection" can drive it with no backend
+  # changes. Source + full docs live in ./yolo-detection/.
+  #
+  # After `docker compose up -d`, point Bambuddy at it:
+  #   Settings → Notifications → AI Print-Failure Detection
+  #     ML URL = http://localhost:3333
+  #   Settings → General → External URL must be reachable from this container.
+  #
+  # Drop your trained weights into ./yolo-detection/models/best.pt before
+  # starting (mounted read-only, not baked into the image).
+  yolo-detection:
+    build: ./yolo-detection
+    container_name: bambuddy-yolo
+    restart: unless-stopped
+    ports:
+      - "${YOLO_PORT:-3333}:3333"
+    volumes:
+      - ./yolo-detection/models:/models:ro
+    environment:
+      YOLO_MODEL_PATH: /models/best.pt
+      YOLO_CONFIDENCE_THRESHOLD: "${YOLO_CONFIDENCE_THRESHOLD:-0.25}"
+      YOLO_IOU_THRESHOLD: "${YOLO_IOU_THRESHOLD:-0.45}"
+      YOLO_IMAGE_SIZE: "${YOLO_IMAGE_SIZE:-640}"
+      YOLO_DEVICE: "${YOLO_DEVICE:-cpu}"
+      YOLO_DETECTION_LABEL: "${YOLO_DETECTION_LABEL:-failure}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3333/hc/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    # For NVIDIA GPU: set YOLO_DEVICE=cuda and uncomment below (needs
+    # NVIDIA Container Toolkit on the host).
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
   # Optional: External PostgreSQL database
   # Uncomment to run Postgres alongside Bambuddy (or use an external Postgres host)
   #postgres:

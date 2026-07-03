@@ -29,7 +29,7 @@ class ImageFetcher:
     async def fetch(self, url: str) -> np.ndarray:
         """Trả về ảnh dạng ndarray BGR. Ném ImageFetchError nếu thất bại."""
         try:
-            async with httpx.AsyncClient(timeout=self._timeout) as client:
+            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
                 resp = await client.get(url)
                 resp.raise_for_status()
                 data = resp.content
